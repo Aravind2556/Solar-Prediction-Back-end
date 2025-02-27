@@ -45,7 +45,7 @@ mongoose.connect(process.env.DB_CONNECTION_STRING)  // mongoose connection and e
 
 
 app.listen(2000,()=>{   //which port
-    console.log("Server stared on localhost")
+    console.log("Server started on port",2000)
 })
 
 app.use('/api', routes)

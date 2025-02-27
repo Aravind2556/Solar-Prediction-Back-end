@@ -4,7 +4,7 @@ const RegisterSchema = new mongoose.Schema({
     Id: { type: Number, required: true, unique: true },
     userid : {type : String , required : true},
     Name: { type: String, required: true, trim: true },
-    Role: { type: String, enum: ["Admin","User"] , default : "User"},
+    Role: { type: String, enum: ["User"] , default : "User"},
     Contact: { type: Number, required: true, trim: true },
     Email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     Password: { type: String, required: true }, // Fixed the spelling

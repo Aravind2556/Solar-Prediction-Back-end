@@ -41,7 +41,7 @@ let uniqueId = `D-${year}-${String(newNumber).padStart(3, '0')}`;
         console.log(name, email, contact, password, confirmPassword);
 
         if (password !== confirmPassword) {
-            return res.json({ success: false, message: "Passwords do not match." });
+            return res.send({ success: false, message: "Passwords do not match." });
         }
 
         if (name && email && contact && password) {
@@ -60,16 +60,23 @@ let uniqueId = `D-${year}-${String(newNumber).padStart(3, '0')}`;
                 Role: "User"
             });
 
-            req.session.profile = {
-                Id: newUser.Id,
-                Name: newUser.Name,
-                Email: newUser.Email,
-                Role: newUser.Role,
-            };
-
             const savedUser = await newUser.save();
             if (savedUser) {
-                return res.send({ success: true, message: "User registered successfully.", data: savedUser });
+                req.session.profile = {
+                    Id: newUser.Id,
+                    Name: newUser.Name,
+                    Email: newUser.Email,
+                    Role: newUser.Role,
+                };
+
+                req.session.save((err)=>{
+                    if(err){
+                        return res.send({success: false, message: "Created user and Failed to create session!"})
+                    }
+        
+                    return res.send({success: true, message: "User Registration successfully!", data: savedUser})
+                })
+
             } else {
                 return res.send({ success: false, message: "Registration failed. Please try again later." });
             }
@@ -86,25 +93,24 @@ let uniqueId = `D-${year}-${String(newNumber).padStart(3, '0')}`;
 router.post('/Login-User', async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log("User login request:", email, password);
 
         const user = await Register.findOne({ Email: email ,Role: 'User'});
         if (!user) {
-            return res.json({ success: false, message: "Invalid user ID" });
+            return res.send({ success: false, message: "Invalid user ID" });
         }
 
         if (user.Password !== password) {
-            return res.json({ success: false, message: "Invalid password" });
+            return res.send({ success: false, message: "Invalid password" });
         }
 
         const { Id, Name, Role, Contact, Email ,userid } = user;
         const currentUser = { Id, Name, Role, Contact, Email , userid };
         req.session.profile = currentUser;
 
-        return res.json({ success: true, message: "Login successful", user: req.session.profile });
+        return res.send({ success: true, message: "Login successful", user: req.session.profile });
     } catch (err) {
         console.log("Error in login:", err);
-        return res.json({ success: false, message: "Error logging in, please contact support" });
+        return res.send({ success: false, message: "Error logging in, please contact support" });
     }
 });
 
@@ -119,19 +125,19 @@ router.get('/checkauth', async (req, res) => {
         if (isValidSession) {
             const fetchUser = await Register.findOne({ Email: req.session.profile.Email })
             if (fetchUser) {
-                return res.json({ success: true, user: isValidSession })
+                return res.send({ success: true, user: isValidSession })
             }
             else {
-                return res.json({ success: false, message: "No User Available " })
+                return res.send({ success: false, message: "No User Available " })
             }
         }
         else {
-            return res.json({ success: false, message: "User not logged in" })
+            return res.send({ success: false, message: "User not logged in" })
         }
     }
     catch (err) {
         console.log("Error in checking Authentication: ", err)
-        return res.json({ success: false, message: "Troble in checking Authentication, Please contact developer!" })
+        return res.send({ success: false, message: "Troble in checking Authentication, Please contact developer!" })
     }
 })
 
@@ -142,16 +148,21 @@ router.get('/logout', async (req, res) => {
     try {
 
         if (req.session.profile) {
-            req.session.destroy()
-            return res.json({ success: true, message: "Logout successfully" })
+            req.session.destroy((err) => {
+                if (err) {
+                    console.log("Error in destroying session:", err);
+                    return res.send({ success: false, message: "Failed to log out! Please contact developer." });
+                }
+                return res.send({ success: true, message: "Logged out successfully!" });
+            })
         }
         else {
-            return res.json({ success: false, message: "error" })
+            return res.send({ success: false, message: "Failed to Logout!" })
         }
     }
     catch (err) {
         console.log("Trouble in erro to logout", err)
-        return res.json({ response: "notok", message: "Trouble error contact admin" })
+        return res.send({ success: false, message: "Trouble in Logout! please contact support team" })
     }
 })
 
@@ -161,22 +172,19 @@ router.get('/fetch-user',async (req,res)=>{
         const isRegister = await Register.find({})
         if(isRegister){
 
-            return res.json({success : true , user : isRegister})
+            return res.send({success : true , user : isRegister})
 
         }
         else{
-            return res.json({success : false , message : "usre data is required"})
+            return res.send({success : false , message : "usre data is required"})
         }
-        
 
     }
     catch(err){
-        console.log("Trouble in erro to logout", err)
-        return res.json({ response: "notok", message: "Trouble error contact admin" })
+        console.log("Trouble in fetching user:", err)
+        return res.send({ success: false, message: "Trouble in fetching users contact admin" })
     }
 })
-
-
 
 
 
